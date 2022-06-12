@@ -4,8 +4,14 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using Service.Application;
 using Service.Common.Logging;
+using Monitor = Service.Common.Monitoring.Monitor;
 
+// Bootstrap the application
 var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
 // Build service container
 builder.Services.AddApplication();
@@ -19,6 +25,7 @@ builder.Services.AddSwaggerGen(options =>
     //options.OperationFilter<FileResultContentTypeOperationFilter>();
 });
 
+// Configure host
 builder.Host
     .UseSerilog((context, services, config) => config
         .ReadFrom.Services(services)
@@ -64,4 +71,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+// Initialize application with monitor
+await Monitor.Run(args, _ => app.RunAsync(), ex =>
+{
+    if (ex is null)
+    {
+        Log.Information("Shutting down...");
+    }
+    else
+    {
+        Log.Fatal(ex, "Exception thrown: {Exception}", ex.Message);
+    }
+
+    Log.CloseAndFlush();
+
+    return ValueTask.CompletedTask;
+});

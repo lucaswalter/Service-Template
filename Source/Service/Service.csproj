@@ -57,8 +57,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Common\Monitoring" />
-  </ItemGroup>
-
 </Project>
