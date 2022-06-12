@@ -1,3 +1,4 @@
+using Sentry.AspNetCore;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -30,6 +31,17 @@ builder.Host
             theme: AnsiConsoleTheme.Code,
             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} - {Message:lj}{NewLine}{Exception}")
         .WriteTo.Sentry());
+
+builder.WebHost
+    .UseSentry(o => o
+        .AddSentryOptions(options =>
+        {
+            options.DefaultTags.Add("Service", "Service-Name");
+            options.SendDefaultPii = true;
+            options.AttachStacktrace = true;
+            options.MinimumBreadcrumbLevel = LogLevel.Debug;
+            options.MinimumEventLevel = LogLevel.Warning;
+        }));
 
 var app = builder.Build();
 
